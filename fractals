@@ -1,0 +1,236 @@
+# -*- coding: utf-8 -*-
+
+
+import sys
+from PySide2.QtCore import *
+from PySide2.QtWidgets import *
+from PySide2.QtGui import *
+
+
+
+
+
+def step_SERP(x_fir, y_fir, x_sec, y_sec, x_thi, y_thi, N, painter):
+    if N == 0:
+        painter.drawLine(x_fir, y_fir, x_sec, y_sec)
+        painter.drawLine(x_fir, y_fir, x_thi, y_thi)
+        painter.drawLine(x_thi, y_thi, x_sec, y_sec)
+    else:
+        x_fir_sec = x_sec - x_fir
+        y_fir_sec = y_sec - y_fir
+        x_fir_thi = x_thi - x_fir
+        y_fir_thi = y_thi - y_fir
+        x_sec_thi = x_thi - x_sec
+        y_sec_thi = y_thi - y_sec       
+        step_SERP(x_fir, y_fir, x_fir + x_fir_sec / 2, y_fir + y_fir_sec / 2, x_fir + x_fir_thi / 2, y_fir + y_fir_thi / 2, N - 1, painter)
+        step_SERP(x_sec, y_sec, x_sec - x_fir_sec / 2, y_sec - y_fir_sec / 2, x_sec + x_sec_thi / 2, y_sec + y_sec_thi / 2, N - 1, painter)
+        step_SERP(x_thi, y_thi, x_thi - x_fir_thi / 2, y_thi - y_fir_thi / 2, x_thi - x_sec_thi / 2, y_thi - y_sec_thi / 2, N - 1, painter)
+
+
+class SERP(QWidget):
+    new = Signal(int)
+
+    def __init__(self, parent=None):
+        QWidget.__init__(self, parent)
+        self.N = 0
+        self.resize(600, 600)
+
+        
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        
+        
+        H, W = self.size().height(), self.size().width()
+        a = H / 4
+        b = 2 * a / (3 ** (1 / 2))
+        if W / 2 - 1.5 * b > 0:
+            step_SERP(W / 2, 0, W / 2 + 1.5 * b, 3 * a, W / 2 - 1.5 * b, 3 * a, self.N, painter)
+        else:
+            b = W / 3
+            a = b * 3 ** (1 / 2) / 2
+            step_SERP(W / 2, H / 2 - 2 * a, W, H / 2 + a, 0, H / 2 + a, self.N, painter)
+        
+        painter.end()
+
+    def setValue(self, value):
+        value = int(value)
+        self.N = value
+        self.new.emit(value)
+        self.repaint()    
+
+
+
+
+
+
+
+
+
+
+
+def step_KOH(x_st, y_st, x_fi, y_fi, N, painter):
+    if N == 0:
+        painter.drawLine(x_st, y_st, x_fi, y_fi)
+    else:
+        x_delta = x_fi - x_st
+        y_delta = y_fi - y_st
+        delta = (x_delta ** 2 + y_delta ** 2) ** (1 / 2)
+        step_KOH(x_st, y_st, x_st + x_delta / 3, y_st + y_delta / 3, N - 1, painter)
+        l = ((x_delta / 3) ** 2 + (y_delta / 3) ** 2) ** (1 / 2)
+        x_need = x_st + x_delta / 2 + (y_delta / 3) / l * 3 ** (1 / 2) / 2 * delta / 3
+        y_need = y_st + y_delta / 2 - (x_delta / 3) / l * 3 ** (1 / 2) / 2 * delta / 3
+        step_KOH(x_st + x_delta / 3, y_st + y_delta / 3, x_need, y_need, N - 1, painter)
+        step_KOH(x_need, y_need, x_fi - x_delta / 3, y_fi - y_delta / 3, N - 1, painter)
+        step_KOH(x_fi - x_delta / 3, y_fi - y_delta / 3, x_fi, y_fi, N - 1, painter)
+        
+
+class KOH(QWidget):
+    new = Signal(int)
+
+    def __init__(self, parent=None):
+        QWidget.__init__(self, parent)
+        self.N = 0
+        self.resize(600, 600)
+
+        
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        
+        
+        H, W = self.size().height(), self.size().width()
+        a = H / 4
+        b = 2 * a / (3 ** (1 / 2))
+        if W / 2 - 1.5 * b > 0:
+            step_KOH(W / 2, 0, W / 2 + 1.5 * b, 3 * a, self.N, painter)
+            step_KOH(W / 2 - 1.5 * b, 3 * a, W / 2, 0, self.N, painter)
+            step_KOH(W / 2 + 1.5 * b, 3 * a, W / 2 - 1.5 * b, 3 * a, self.N, painter)
+        else:
+            b = W / 3
+            a = b * 3 ** (1 / 2) / 2
+            step_KOH(W / 2, H / 2 - 2 * a, W, H / 2 + a, self.N, painter)
+            step_KOH(0, H / 2 + a, W / 2, H / 2 - 2 * a, self.N, painter)
+            step_KOH(W, H / 2 + a, 0, H / 2 + a, self.N, painter)
+        
+        painter.end()
+
+    def setValue(self, value):
+        value = int(value)
+        self.N = value
+        self.new.emit(value)
+        self.repaint()    
+
+
+
+def step_CROSS(x_st, y_st, x_fi, y_fi, N, painter):
+    if N == 0:
+        painter.drawLine(x_st, y_st, x_fi, y_fi)
+    else:
+        x_delta = x_fi - x_st
+        y_delta = y_fi - y_st
+        x_a = x_delta / 3
+        y_a = y_delta / 3
+        step_CROSS(x_st, y_st, x_st + x_a, y_st + y_a, N - 1, painter)
+        step_CROSS(x_st + x_a, y_st + y_a, x_st + x_a + y_a, y_st - x_a + y_a, N - 1, painter)
+        step_CROSS(x_st + x_a + y_a, y_st - x_a + y_a, x_st + 2 * x_a + y_a, y_st - x_a + 2 * y_a, N - 1, painter)
+        step_CROSS(x_st + 2 * x_a + y_a, y_st - x_a + 2 * y_a, x_fi - x_a, y_fi - y_a, N - 1, painter)
+        step_CROSS(x_fi - x_a, y_fi - y_a, x_fi, y_fi, N - 1, painter)
+            
+        
+        
+        
+class CROSS(QWidget):
+    new = Signal(int)
+
+    def __init__(self, parent=None):
+        QWidget.__init__(self, parent)
+        self.N = 0
+        self.resize(600, 600)
+
+        
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        
+        
+        H, W = self.size().height(), self.size().width()
+
+        if W > H:
+            step_CROSS(W / 2, 0, W / 2 - H / 2, H / 2, self.N, painter)
+            step_CROSS(W / 2 + H / 2, H / 2, W / 2, 0, self.N, painter)
+            step_CROSS(W / 2, H, W / 2 + H / 2, H / 2, self.N, painter)
+            step_CROSS(W / 2 - H / 2, H / 2, W / 2, H, self.N, painter)
+
+            
+        else:
+            
+            step_CROSS(W / 2, H / 2 - W / 2, 0, H / 2, self.N, painter)
+            step_CROSS(W, H / 2, W / 2, H / 2 - W / 2, self.N, painter)
+            step_CROSS(W / 2, H / 2 + W / 2, W, H / 2, self.N, painter)
+            step_CROSS(0, H / 2, W / 2, H / 2 + W / 2, self.N, painter)
+            
+
+
+        
+        painter.end()
+
+    def setValue(self, value):
+        value = int(value)
+        self.N = value
+        self.new.emit(value)
+        self.repaint()    
+
+
+class MyWindow(QMainWindow):
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.resize(700, 700)
+        self.Widget_KOH = KOH(self)
+        self.Widget_CROSS = CROSS(self)
+        self.Widget_SERP = SERP(self)
+        
+        SpinBox = QSpinBox(self)
+        SpinBox.setWindowTitle("N:")
+        SpinBox.setGeometry(10, 10, 100, 30) 
+        
+        
+        SpinBox.valueChanged.connect(self.Widget_KOH.setValue)     
+        SpinBox.valueChanged.connect(self.Widget_CROSS.setValue)  
+        SpinBox.valueChanged.connect(self.Widget_SERP.setValue) 
+        var = QComboBox(self)
+        var.setGeometry(10, 40, 160, 30)        
+        var.addItems(["Koch's Snowflake", "Cross", "Sierpinski's Triangle"])
+        var.activated[str].connect(self.onActivated)
+        self.Widget_CROSS.hide()
+        self.Widget_SERP.hide()
+        
+        
+    def resizeEvent(self, event):
+        self.Widget_KOH.setGeometry(0, 0, self.width(), self.height())
+        self.Widget_SERP.setGeometry(0, 0, self.width(), self.height())
+        self.Widget_CROSS.setGeometry(0, 0, self.width(), self.height())
+        
+        
+    def onActivated(self, text):
+        if text == "Koch's Snowflake":
+            self.Widget_KOH.show()
+            self.Widget_CROSS.hide()
+            self.Widget_SERP.hide()
+        elif text == "Cross":
+            self.Widget_KOH.hide()
+            self.Widget_CROSS.show()
+            self.Widget_SERP.hide()
+        else:
+            self.Widget_KOH.hide()
+            self.Widget_CROSS.hide()
+            self.Widget_SERP.show()
+
+
+
+
+
+app = QApplication(sys.argv)
+Window = MyWindow()
+Window.show()
+app.exec_()
